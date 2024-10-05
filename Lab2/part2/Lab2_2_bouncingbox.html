@@ -33,8 +33,11 @@
       dx: 2,
       dy: 2,
       angle: 0,
-      rotationSpeed: 0.05
+      rotationSpeed: 0.05,
+      color: '#3498db'
     };
+
+    let lastAngle = 0;
 
     function drawBox() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -42,15 +45,31 @@
       ctx.translate(box.x + box.width / 2, box.y + box.height / 2);
       ctx.rotate(box.angle);
       ctx.translate(-box.width / 2, -box.height / 2);
-      ctx.fillStyle = '#3498db';
+      ctx.fillStyle = box.color;
       ctx.fillRect(0, 0, box.width, box.height);
       ctx.restore();
+    }
+
+    function getRandomColor() {
+        // Function to generate a random color (optional for color change on bounce)
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
     }
 
     function updateBox() {
       box.x += box.dx;
       box.y += box.dy;
       box.angle += box.rotationSpeed;
+
+      const degrees = (box.angle * 180 /Math.PI) % 360
+      if (Math.floor(degrees / 30) !== Math.floor(lastAngle / 30)) {
+        box.color = getRandomColor();
+      }
+      lastAngle = degrees;
 
       if (box.x + box.width > canvas.width || box.x < 0) {
         box.dx = -box.dx;

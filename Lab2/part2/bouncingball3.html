@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Ball Animation</title>
+    <style>
+        body { margin: 0; }
+        canvas { background-color: #ddd; }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="400" height="300"></canvas>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        class Ball {
+            constructor(x, y, dx, dy, radius, sizediff, color) {
+                this.x = x;
+                this.y = y;
+                this.dx = dx;
+                this.dy = dy;
+                this.radius = radius;
+                this.sizediff = 0;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius + this.sizediff, 0, Math.PI * 2); 
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+                    this.sizediff += 2;
+                    this.dx = -this.dx; 
+                    this.color = getRandomColor(); 
+                }
+                if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
+                    this.sizediff -= 2;
+                    this.dy = -this.dy; 
+                }
+            }
+        }
+
+        const balls = [
+            new Ball(canvas.width / 4, canvas.height / 4, 2, 2, 10, '#ff0000'),
+            new Ball(canvas.width * 0.75, canvas.height / 4, -2, 2, 10, '#00ff00'), 
+            new Ball(canvas.width / 4, canvas.height * 0.75, 2, -2, 10, '#0000ff'), 
+        ];
+
+        function getRandomColor() {
+            // Function to generate a random color (optional for color change on bounce)
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            for (let i=0; i < balls.length; i++) {
+                balls[i].draw();
+                balls[i].update();
+            }
+
+            requestAnimationFrame(animate); // Schedule next animation frame
+        }
+
+        animate(); // Start the animation loop
+    </script>
+</body>
+</html>

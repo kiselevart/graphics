@@ -20,12 +20,13 @@
         let dx = 2; 
         let dy = -2; 
         const radius = 10; 
+        let sizediff = 0;
         let color = '#ff0000'; 
 
         function drawBall() {
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2); 
+            ctx.arc(x, y, radius + sizediff, 0, Math.PI * 2); 
             ctx.fillStyle = color;
             ctx.fill();
             ctx.closePath();
@@ -35,12 +36,13 @@
             x += dx;
             y += dy;
 
-            
             if (x + radius > canvas.width || x - radius < 0) {
+                sizediff += 2;
                 dx = -dx; 
                 color = getRandomColor(); 
             }
             if (y + radius > canvas.height || y - radius < 0) {
+                sizediff -= 2;
                 dy = -dy; 
             }
         }
