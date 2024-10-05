@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
@@ -35,11 +35,12 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+
+    // glew: load all OpenGL function pointers
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK)
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "Failed to initialize GLEW" << std::endl;
         return -1;
     }    
 
