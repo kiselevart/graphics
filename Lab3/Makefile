@@ -2,13 +2,17 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++11
 LIBS = -lglfw -lGL -lGLEW
 
-TARGET = opengl_triangle_indexed
+TARGET = hello
 SRCS = hello_triangle_indexed.cpp
+OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS) $(LIBS)
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJS)
