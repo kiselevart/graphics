@@ -3,7 +3,7 @@ CXXFLAGS = -Wall -std=c++11
 LIBS = -lglfw -lGL -lGLEW
 
 TARGET = hello
-SRCS = hello_triangle_indexed.cpp
+SRCS = tst.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
