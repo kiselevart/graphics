@@ -23,77 +23,81 @@ void main()
 
 )";
 
-// Fragment shader source code
+// Fragment shader for box faces 
 const char* fragmentShaderSource = R"(
 #version 330 core
 
 out vec3 color;
 void main()
 {
-	color = vec3(1,0,0);
+	color = vec3(1,0,0); 
+}
+)";
+
+// Fragment shader for box edges
+const char* edgeFragmentShaderSource = R"(
+#version 330 core
+
+out vec3 color;
+void main()
+{
+	color = vec3(0,0,0); 
 }
 )";
 
 GLFWwindow* window;
 
-vector<GLfloat> createBox(const vec3& center, float width, float height, float depth) {
-    float halfWidth = width / 2.0f;
-    float halfHeight = height / 2.0f;
-    float halfDepth = depth / 2.0f;
+vector<GLfloat> createBox(const vec3& c, float w, float h, float d) {
+    float mw = w / 2.0f;
+    float mh = h / 2.0f;
+    float md = d / 2.0f;
 
     vector<GLfloat> vertices = {
-        center.x - halfWidth, center.y - halfHeight, center.z + halfDepth,
-        center.x + halfWidth, center.y - halfHeight, center.z + halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z + halfDepth,
-        center.x - halfWidth, center.y + halfHeight, center.z + halfDepth,
-        
-        center.x - halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z - halfDepth,
-        center.x - halfWidth, center.y + halfHeight, center.z - halfDepth,
+       // Front vertices 
+       c.x - mw, c.y + mh, c.z - md, // 0
+       c.x + mw, c.y + mh, c.z - md, // 1
+       c.x - mw, c.y - mh, c.z - md, // 2
+       c.x + mw, c.y - mh, c.z - md, // 3
 
-        center.x - halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x - halfWidth, center.y - halfHeight, center.z + halfDepth,
-        center.x - halfWidth, center.y + halfHeight, center.z + halfDepth,
-        center.x - halfWidth, center.y + halfHeight, center.z - halfDepth,
-
-        center.x + halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y - halfHeight, center.z + halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z + halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z - halfDepth,
-
-        center.x - halfWidth, center.y + halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y + halfHeight, center.z + halfDepth,
-        center.x - halfWidth, center.y + halfHeight, center.z + halfDepth,
-
-        center.x - halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y - halfHeight, center.z - halfDepth,
-        center.x + halfWidth, center.y - halfHeight, center.z + halfDepth,
-        center.x - halfWidth, center.y - halfHeight, center.z + halfDepth,
+       // Back vertices
+       c.x - mw, c.y + mh, c.z + md, // 4
+       c.x + mw, c.y + mh, c.z + md, // 5
+       c.x - mw, c.y - mh, c.z + md, // 6
+       c.x + mw, c.y - mh, c.z + md, // 7
     };
 
     return vertices;
 }
 
 vector<GLuint> createBoxIndices() {
-    return {
-        0, 1, 2, 2, 3, 0,
-        4, 5, 6, 6, 7, 4,
-        8, 9, 10, 10, 11, 8,
-        12, 13, 14, 14, 15, 12,
-        16, 17, 18, 18, 19, 16,
-        20, 21, 22, 22, 23, 20
+    const vector<unsigned int> indices = {
+        0, 1, 2, 1, 2, 3, // front
+        4, 5, 6, 5, 6, 7, // back
+        0, 4, 2, 4, 2, 6, // left
+        1, 5, 3, 5, 3, 7, // right
+        0, 4, 1, 4, 1, 5, // top
+        2, 6, 3, 6, 3, 7  // bottom
     };
+
+    return indices;
 }
 
-GLuint createShaderProgram() {
+vector<GLuint> createEdgeIndices() {
+    const vector<GLuint> edgeIndices = {
+        0, 1, 1, 3, 3, 2, 2, 0, // front face edges
+        4, 5, 5, 7, 7, 6, 6, 4, // back face edges
+        0, 4, 1, 5, 2, 6, 3, 7  // connecting edges
+    };
+    return edgeIndices;
+}
+
+GLuint createShaderProgram(const char* fragSource) {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glShaderSource(fragmentShader, 1, &fragSource, NULL);
     glCompileShader(fragmentShader);
 
     GLuint shaderProgram = glCreateProgram();
@@ -117,7 +121,7 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1024, 768, "Create Box", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Create Box with Edges", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -125,7 +129,6 @@ int main(void) {
 
     glfwMakeContextCurrent(window);
 
-    // Initialize GLEW
     glewExperimental = true; 
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
@@ -140,12 +143,13 @@ int main(void) {
 
     vector<GLfloat> boxVertices = createBox(boxCenter, boxWidth, boxHeight, boxDepth);
     vector<GLuint> boxIndices = createBoxIndices();
+    vector<GLuint> edgeIndices = createEdgeIndices();
 
-    GLuint VBO, VAO, EBO;
-
+    GLuint VBO, VAO, EBO, edgeEBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
+    glGenBuffers(1, &edgeEBO);
 
     glBindVertexArray(VAO);
 
@@ -155,33 +159,47 @@ int main(void) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, boxIndices.size() * sizeof(GLuint), boxIndices.data(), GL_STATIC_DRAW);
 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edgeEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, edgeIndices.size() * sizeof(GLuint), edgeIndices.data(), GL_STATIC_DRAW);
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
 
-    GLuint shaderProgram = createShaderProgram();
+    GLuint faceShaderProgram = createShaderProgram(fragmentShaderSource);
+    GLuint edgeShaderProgram = createShaderProgram(edgeFragmentShaderSource);
+
+    glEnable(GL_DEPTH_TEST);
 
     mat4 view = lookAt(vec3(3.0f, 3.0f, 3.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
     mat4 projection = perspective(radians(45.0f), 1024.0f / 768.0f, 0.1f, 100.0f);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST); 
 
-        glUseProgram(shaderProgram);
+        mat4 model = mat4(1.0f);
+        mat4 MVP = projection * view * model;
 
-        GLuint modelLoc = glGetUniformLocation(shaderProgram, "model");
-        GLuint viewLoc = glGetUniformLocation(shaderProgram, "view");
-        GLuint projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-
-        mat4 model = mat4(1.0f); 
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, value_ptr(model));
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, value_ptr(projection));
+        // Draw box faces
+        glUseProgram(faceShaderProgram);
+        GLuint mvpLoc = glGetUniformLocation(faceShaderProgram, "MVP");
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, value_ptr(MVP));
 
         glBindVertexArray(VAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); 
         glDrawElements(GL_TRIANGLES, boxIndices.size(), GL_UNSIGNED_INT, 0);
+
+        // Draw box edges
+        glUseProgram(edgeShaderProgram);
+        mvpLoc = glGetUniformLocation(edgeShaderProgram, "MVP");
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, value_ptr(MVP));
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edgeEBO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Line mode for edges
+        glDrawElements(GL_LINES, edgeIndices.size(), GL_UNSIGNED_INT, 0);
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
@@ -191,7 +209,9 @@ int main(void) {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    glDeleteProgram(shaderProgram);
+    glDeleteBuffers(1, &edgeEBO);
+    glDeleteProgram(faceShaderProgram);
+    glDeleteProgram(edgeShaderProgram);
     glfwTerminate();
     return 0;
 }

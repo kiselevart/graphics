@@ -2,8 +2,8 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++11
 LIBS = -lglfw -lGL -lGLEW -I/usr/include
 
-TARGET = hello
-SRCS = Lab3_box.cpp
+TARGET = Lab3_pyramid
+SRCS = Lab3_pyramid.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
