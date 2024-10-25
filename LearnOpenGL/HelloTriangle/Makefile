@@ -2,8 +2,8 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++11
 LIBS = -lglfw -lGL -lGLEW -I/usr/include
 
-TARGET = BLANK
-SRCS = BLANK
+TARGET = hello_triangle
+SRCS = hello_triangle.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
