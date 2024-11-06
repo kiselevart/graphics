@@ -1,52 +1,121 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <vector>
+#include <stdio.h>
 
+using namespace std;
+using namespace glm;
+
+// Vertex shader source code
 const char* vertexShaderSource = R"(
 #version 330 core
-layout(location = 0) in vec3 position;
-void main() {
-    gl_Position = vec4(position, 1.0);
+
+layout(location = 0) in vec3 vertexPosition_modelspace;
+uniform mat4 MVP;
+
+void main()
+{
+	gl_Position =  MVP * vec4(vertexPosition_modelspace,1);
 }
+
 )";
 
+// Fragment shader for box faces 
 const char* fragmentShaderSource = R"(
 #version 330 core
-out vec4 color;
-void main() {
-    color = vec4(1.0, 0.0, 0.0, 1.0); // Red color
+
+out vec3 color;
+void main()
+{
+	color = vec3(1,0,0); 
 }
 )";
 
-void checkCompileErrors(GLuint shader, std::string type) {
-    GLint success;
-    GLchar infoLog[1024];
-    if (type != "PROGRAM") {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n";
-        }
-    } else {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n";
-        }
-    }
+// Fragment shader for box edges
+const char* edgeFragmentShaderSource = R"(
+#version 330 core
+
+out vec3 color;
+void main()
+{
+	color = vec3(0,0,0); 
+}
+)";
+
+GLFWwindow* window;
+
+vector<GLfloat> createBox(const vec3& c, float w, float h, float d) {
+    float mw = w / 2.0f;
+    float mh = h / 2.0f;
+    float md = d / 2.0f;
+
+    vector<GLfloat> vertices = {
+       // Front vertices 
+       c.x - mw, c.y + mh, c.z - md, // 0
+       c.x + mw, c.y + mh, c.z - md, // 1
+       c.x - mw, c.y - mh, c.z - md, // 2
+       c.x + mw, c.y - mh, c.z - md, // 3
+
+       // Back vertices
+       c.x - mw, c.y + mh, c.z + md, // 4
+       c.x + mw, c.y + mh, c.z + md, // 5
+       c.x - mw, c.y - mh, c.z + md, // 6
+       c.x + mw, c.y - mh, c.z + md, // 7
+    };
+
+    return vertices;
 }
 
-void checkGLError() {
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL error: " << err << std::endl;
-    }
+vector<GLuint> createBoxIndices() {
+    const vector<unsigned int> indices = {
+        0, 1, 2, 1, 2, 3, // front
+        4, 5, 6, 5, 6, 7, // back
+        0, 4, 2, 4, 2, 6, // left
+        1, 5, 3, 5, 3, 7, // right
+        0, 4, 1, 4, 1, 5, // top
+        2, 6, 3, 6, 3, 7  // bottom
+    };
+
+    return indices;
 }
 
-int main() {
-    // Initialize GLFW
+vector<GLuint> createEdgeIndices() {
+    const vector<GLuint> edgeIndices = {
+        0, 1, 1, 3, 3, 2, 2, 0, // front face edges
+        4, 5, 5, 7, 7, 6, 6, 4, // back face edges
+        0, 4, 1, 5, 2, 6, 3, 7  // connecting edges
+    };
+    return edgeIndices;
+}
+
+GLuint createShaderProgram(const char* fragSource) {
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragSource, NULL);
+    glCompileShader(fragmentShader);
+
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+
+
+int main(void) {
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW\n";
+        fprintf(stderr, "Failed to initialize GLFW\n");
         return -1;
     }
 
@@ -54,9 +123,8 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Triangle", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Create Box with Edges", NULL, NULL);
     if (!window) {
-        std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
         return -1;
     }
@@ -64,84 +132,86 @@ int main() {
 
     // Initialize GLAD after creating the OpenGL context
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD\n";
+        fprintf(stderr, "Failed to initialize GLAD\n");
         return -1;
     }
 
-    // Set viewport
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
+    vec3 boxCenter(0.0f, 0.0f, 0.0f);
+    float boxWidth = 1.0f;
+    float boxHeight = 1.0f;
+    float boxDepth = 1.0f;
 
-    // Build and compile shader program
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    checkCompileErrors(vertexShader, "VERTEX");
+    vector<GLfloat> boxVertices = createBox(boxCenter, boxWidth, boxHeight, boxDepth);
+    vector<GLuint> boxIndices = createBoxIndices();
+    vector<GLuint> edgeIndices = createEdgeIndices();
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    checkCompileErrors(fragmentShader, "FRAGMENT");
-
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    checkCompileErrors(shaderProgram, "PROGRAM");
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // Define triangle vertices
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
-
-    // Vertex Array Object and Vertex Buffer Object
-    GLuint VAO, VBO;
+    GLuint VBO, VAO, EBO, edgeEBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    glGenBuffers(1, &edgeEBO);
 
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, boxVertices.size() * sizeof(GLfloat), boxVertices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, boxIndices.size() * sizeof(GLuint), boxIndices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edgeEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, edgeIndices.size() * sizeof(GLuint), edgeIndices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Set clear color
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    GLuint faceShaderProgram = createShaderProgram(fragmentShaderSource);
+    GLuint edgeShaderProgram = createShaderProgram(edgeFragmentShaderSource);
 
-    // Render loop
+    glEnable(GL_DEPTH_TEST);
+
+    mat4 view = lookAt(vec3(3.0f, 3.0f, 3.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+    mat4 projection = perspective(radians(45.0f), 1024.0f / 768.0f, 0.1f, 100.0f);
+
     while (!glfwWindowShouldClose(window)) {
-        // Clear the color buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Draw the triangle
-        glUseProgram(shaderProgram);
+        mat4 model = mat4(1.0f);
+        mat4 MVP = projection * view * model;
+
+        // Draw box faces
+        glUseProgram(faceShaderProgram);
+        GLuint mvpLoc = glGetUniformLocation(faceShaderProgram, "MVP");
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, value_ptr(MVP));
+
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); 
+        glDrawElements(GL_TRIANGLES, boxIndices.size(), GL_UNSIGNED_INT, 0);
+
+        // Draw box edges
+        glUseProgram(edgeShaderProgram);
+        mvpLoc = glGetUniformLocation(edgeShaderProgram, "MVP");
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, value_ptr(MVP));
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edgeEBO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Line mode for edges
+        glDrawElements(GL_LINES, edgeIndices.size(), GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        // Check for OpenGL errors
-        checkGLError();
     }
 
-    // Cleanup
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
-
+    glDeleteBuffers(1, &EBO);
+    glDeleteBuffers(1, &edgeEBO);
+    glDeleteProgram(faceShaderProgram);
+    glDeleteProgram(edgeShaderProgram);
     glfwTerminate();
     return 0;
 }
