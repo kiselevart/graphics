@@ -1,18 +1,24 @@
-CXX = g++
-CXXFLAGS = -Wall -std=c++11
-LIBS = -lglfw -lGL -lGLEW -I/usr/include
+CXX = clang++
+CXXFLAGS = -I/opt/homebrew/Cellar/glfw/3.4/include -std=c++17 -stdlib=libc++
+LDFLAGS = -L/opt/homebrew/Cellar/glfw/3.4/lib -lglfw -lGL -framework OpenGL
 
-TARGET = hello_window
-SRCS = hello_window.cpp
-OBJS = $(SRCS:.cpp=.o)
+# Source files 
+SRCS = Task1/Lab4_textured_box.cpp /Users/kisel/graphics/dependencies/glad/src/glad.c
 
-all: $(TARGET)
+# Header files (correct paths for glad headers and other includes)
+INCLUDES = -I/Users/kisel/graphics/dependencies/glad/include/ -I/usr/local/include -ITask1
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+# Output executable
+TARGET = Lab4
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Compile the program
+$(TARGET): $(SRCS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(SRCS) $(LDFLAGS) -o $(TARGET)
 
+# Clean the build
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET)
+
+# Run the program
+run: $(TARGET)
+	./$(TARGET)
