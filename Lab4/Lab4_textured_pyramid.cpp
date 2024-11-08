@@ -253,7 +253,7 @@ int main() {
 
     mat4 Model = mat4(1.0f);  // Identity matrix
     Model = translate(Model, vec3(0.0f, -0.5f, 0.0f));   
-   mat4 MVP = Projection * View * Model;
+    mat4 MVP = Projection * View * Model;
 
     GLuint MVPLocation = glGetUniformLocation(shaderProgram, "MVP");
     glUniformMatrix4fv(MVPLocation, 1, GL_FALSE, value_ptr(MVP));

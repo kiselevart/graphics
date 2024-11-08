@@ -1,0 +1,32 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+\section*{Proof:}
+Let $\mathbf{v}_1$ and $\mathbf{v}_2$ be two edge vectors of a face on a 3D object. The normal vector $\mathbf{n}$ is given by:
+\[
+\mathbf{n} = \mathbf{v}_1 \times \mathbf{v}_2
+\]
+Let us apply a scaling transformation with scaling factors $(s_x, s_y, s_z)$. The scaled vectors $\mathbf{v}_1'$ and $\mathbf{v}_2'$ become:
+\[
+\mathbf{v}_1' = (s_x v_{1x}, s_y v_{1y}, s_z v_{1z})
+\]
+\[
+\mathbf{v}_2' = (s_x v_{2x}, s_y v_{2y}, s_z v_{2z})
+\]
+The new normal $\mathbf{n}'$ after scaling is:
+\[
+\mathbf{n}' = \mathbf{v}_1' \times \mathbf{v}_2' = 
+\begin{vmatrix} 
+    \mathbf{i} & \mathbf{j} & \mathbf{k} \\
+    s_x v_{1x} & s_y v_{1y} & s_z v_{1z} \\
+    s_x v_{2x} & s_y v_{2y} & s_z v_{2z} 
+\end{vmatrix}
+\]
+Expanding this determinant, we obtain:
+\[
+\mathbf{n}' = \left(s_y s_z (v_{1y} v_{2z} - v_{1z} v_{2y}),\; s_x s_z (v_{1z} v_{2x} - v_{1x} v_{2z}),\; s_x s_y (v_{1x} v_{2y} - v_{1y} v_{2x})\right)
+\]
+It is clear that $\mathbf{n}' \neq \mathbf{n}$, therefore scaling does not preserve the normals of all edges.
+
+\end{document}
