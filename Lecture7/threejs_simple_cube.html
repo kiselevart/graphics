@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Three.js Cube Example</title>
+    <style>
+        body { margin: 0; background-color: #eee; }
+        canvas { display: block; width: 600px; height: 400px; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script type="module">
+    import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r132/build/three.module.js';
+
+    function main() {
+        // Select the canvas element from the HTML page
+        const canvas = document.querySelector('#c');
+        
+        // Create a WebGL renderer to draw the scene
+        const renderer = new THREE.WebGLRenderer({ canvas });
+        renderer.setSize(600, 400); // Set the renderer size to 600x400
+
+        // Set up a perspective camera
+        const camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 5);
+        camera.position.z = 2; // Move the camera away from the origin to see the objects
+
+        // Create a new scene to hold all the objects, lights, and camera
+        const scene = new THREE.Scene();
+
+        // Create a box geometry (cube) with width, height, and depth
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Create a material to apply to the geometry (MeshBasicMaterial does not respond to light)
+        const material = new THREE.MeshBasicMaterial({ color: 0x44aa88 }); // Greenish blue color
+
+        // Create a mesh by combining the geometry and material
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube); // Add the cube to the scene
+
+        // Render the scene from the perspective of the camera
+        renderer.render(scene, camera);
+    }
+
+    main(); // Call the main function to set everything up
+    </script>
+</body>
+</html>

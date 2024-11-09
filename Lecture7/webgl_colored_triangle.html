@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL - Colored Triangle</title>
+    <style>
+        body { margin: 0; background-color: #eee; }
+        canvas { display: block; width: 600px; height: 400px; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script>
+    'use strict';
+
+    // Get the canvas element and initialize WebGL2 context
+    const canvas = document.querySelector('canvas');
+    let gl = canvas.getContext('webgl2');
+
+    // Fallback to WebGL1 if WebGL2 is not supported
+    if (!gl) {
+        console.warn('WebGL2 not supported, falling back on WebGL1');
+        gl = canvas.getContext('webgl');
+    }
+
+    // Set the canvas resolution to match the displayed size
+    canvas.width = canvas.clientWidth * window.devicePixelRatio;
+    canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
+    // Set the viewport to match the canvas size
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // Set the clear color for the canvas (dark gray in this case) and clear the color buffer
+    gl.clearColor(0.2, 0.2, 0.2, 1.0); // Set clear color to #333
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Vertex shader source code
+    // This shader takes in a position and color attribute and passes the color to the fragment shader
+    const vsGLSL = `#version 300 es
+    in vec4 position;
+    in vec4 color;
+    out vec4 vColor;
+    void main() {
+        gl_Position = position;
+        vColor = color;
+    }
+    `;
+
+    // Fragment shader source code
+    // This shader outputs the interpolated color from the vertex shader
+    const fsGLSL = `#version 300 es
+    precision highp float;
+    in vec4 vColor;
+    out vec4 outColor;
+    void main() {
+        outColor = vColor;
+    }
+    `;
+
+    // Create and compile the vertex shader
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    if (!vertexShader) {
+        throw new Error('Failed to create vertex shader');
+    }
+    gl.shaderSource(vertexShader, vsGLSL);
+    gl.compileShader(vertexShader);
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(vertexShader));
+    }
+
+    // Create and compile the fragment shader
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    if (!fragmentShader) {
+        throw new Error('Failed to create fragment shader');
+    }
+    gl.shaderSource(fragmentShader, fsGLSL);
+    gl.compileShader(fragmentShader);
+    if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(fragmentShader));
+    }
+
+    // Create a WebGL program and attach both shaders to it
+    const prg = gl.createProgram();
+    gl.attachShader(prg, vertexShader);
+    gl.attachShader(prg, fragmentShader);
+    gl.linkProgram(prg);
+    if (!gl.getProgramParameter(prg, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(prg));
+    }
+
+    // Get the location of the 'position' and 'color' attributes in the shader program
+    const positionLoc = gl.getAttribLocation(prg, 'position');
+    if (positionLoc === -1) {
+        throw new Error('Failed to get the attribute location for position');
+    }
+    const colorLoc = gl.getAttribLocation(prg, 'color');
+    if (colorLoc === -1) {
+        throw new Error('Failed to get the attribute location for color');
+    }
+
+    // Create a Vertex Array Object (VAO) to store state related to vertex input
+    const triangleVAO = gl.createVertexArray();
+    gl.bindVertexArray(triangleVAO);
+
+    // Define the vertex positions and colors for the triangle (in clip space)
+    // Clip space is a coordinate system where x, y, and z range from -1 to 1
+    const vertexData = new Float32Array([
+        // Positions    // Colors
+        0,   0.7,       1.0, 0.0, 0.0, 1.0,  // Top vertex (red)
+        0.5, -0.7,      0.0, 1.0, 0.0, 1.0,  // Bottom right vertex (green)
+       -0.5, -0.7,      0.0, 0.0, 1.0, 1.0,  // Bottom left vertex (blue)
+    ]);
+
+    // Create a buffer and bind it to the ARRAY_BUFFER target
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW); // Upload vertex data to the GPU
+
+    // Enable the 'position' attribute and describe its layout in the buffer
+    gl.enableVertexAttribArray(positionLoc);
+    gl.vertexAttribPointer(
+        positionLoc,  // Attribute location
+        2,            // Number of components per vertex attribute (x and y)
+        gl.FLOAT,     // Data type of each component
+        false,        // Whether to normalize the data
+        6 * Float32Array.BYTES_PER_ELEMENT, // Stride (byte offset between consecutive attributes)
+        0             // Offset into the buffer where the attribute data starts
+    );
+
+    // Enable the 'color' attribute and describe its layout in the buffer
+    gl.enableVertexAttribArray(colorLoc);
+    gl.vertexAttribPointer(
+        colorLoc,     // Attribute location
+        4,            // Number of components per vertex attribute (r, g, b, a)
+        gl.FLOAT,     // Data type of each component
+        false,        // Whether to normalize the data
+        6 * Float32Array.BYTES_PER_ELEMENT, // Stride (byte offset between consecutive attributes)
+        2 * Float32Array.BYTES_PER_ELEMENT  // Offset into the buffer where the attribute data starts
+    );
+
+    // Use the shader program
+    gl.useProgram(prg);
+    gl.bindVertexArray(triangleVAO);
+
+    // Draw the triangle using the vertex data (3 vertices)
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    </script>
+</body>
+</html>

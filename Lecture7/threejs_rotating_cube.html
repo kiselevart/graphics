@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Box Example</title>
+    <style>
+        body { margin: 0; background-color: #eee; }
+        canvas { display: block; width: 600px; height: 400px; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.150.1/build/three.module.js';
+
+    function main() {
+        // Select the canvas element from the HTML page
+        const canvas = document.querySelector('#c');
+        
+        // Create a WebGL renderer to draw the scene
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+        renderer.setSize(600, 400); // Set the renderer size to 600x400
+        renderer.setClearColor(0x333333); // Set the clear color to #333 (dark gray)
+
+        // Set up a perspective camera
+        const fov = 75; // Field of view
+        const aspect = 600 / 400; // Aspect ratio based on canvas size
+        const near = 0.1; // Near clipping plane
+        const far = 5; // Far clipping plane
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.z = 2; // Move the camera away from the origin to see the objects
+
+        // Create a new scene to hold all the objects, lights, and camera
+        const scene = new THREE.Scene();
+
+        // Add a point light to the scene to illuminate the objects
+        const color = 0xFFFFFF; // White light
+        const intensity = 1; // Brightness of the light
+        const light = new THREE.PointLight(color, intensity);
+        light.position.set(2, 2, 2); // Set the position of the light in the scene
+        scene.add(light); // Add the light to the scene
+
+        // Create a box geometry (cube) with width, height, and depth
+        const boxWidth = 1;
+        const boxHeight = 1;
+        const boxDepth = 1;
+        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+        // Create a material to apply to the geometry (MeshStandardMaterial responds to light)
+        const material = new THREE.MeshStandardMaterial({ color: 0x44aa88 }); // Greenish blue color
+
+        // Create a mesh by combining the geometry and material
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube); // Add the cube to the scene
+
+        // Function to render the scene continuously
+        function render(time) {
+            time *= 0.001; // Convert time from milliseconds to seconds
+
+            // Rotate the cube over time to create an animation
+            cube.rotation.x = time;
+            cube.rotation.y = time;
+
+            // Render the scene from the perspective of the camera
+            renderer.render(scene, camera);
+            
+            // Request the next frame to keep the animation going
+            requestAnimationFrame(render);
+        }
+
+        // Start the rendering loop
+        requestAnimationFrame(render);
+    }
+
+    main(); // Call the main function to set everything up
+    </script>
+</body>
+</html>
