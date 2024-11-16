@@ -107,9 +107,12 @@
     // Clip space is a coordinate system where x, y, and z range from -1 to 1
     const vertexData = new Float32Array([
         // Positions    // Colors
-        0,   0.7,       1.0, 0.0, 0.0, 1.0,  // Top vertex (red)
-        0.5, -0.7,      0.0, 1.0, 0.0, 1.0,  // Bottom right vertex (green)
-       -0.5, -0.7,      0.0, 0.0, 1.0, 1.0,  // Bottom left vertex (blue)
+        -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+        -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+        -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
+        -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
+        1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
     ]);
 
     // Create a buffer and bind it to the ARRAY_BUFFER target
@@ -128,16 +131,18 @@
         0             // Offset into the buffer where the attribute data starts
     );
 
-    // Enable the 'color' attribute and describe its layout in the buffer
-    gl.enableVertexAttribArray(colorLoc);
-    gl.vertexAttribPointer(
-        colorLoc,     // Attribute location
-        4,            // Number of components per vertex attribute (r, g, b, a)
-        gl.FLOAT,     // Data type of each component
-        false,        // Whether to normalize the data
-        6 * Float32Array.BYTES_PER_ELEMENT, // Stride (byte offset between consecutive attributes)
-        2 * Float32Array.BYTES_PER_ELEMENT  // Offset into the buffer where the attribute data starts
-    );
+    // greenish color converted from hexadecimal
+    const colorPositions = new Float32Array([
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,
+        0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53,   0.27, 0.67, 0.53
+    ])
+
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 
     // Use the shader program
     gl.useProgram(prg);

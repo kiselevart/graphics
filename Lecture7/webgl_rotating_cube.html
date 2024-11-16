@@ -10,8 +10,8 @@
     </style>
 </head>
 <body>
-    <canvas></canvas>
-    <script>
+<canvas></canvas>
+<script>
     'use strict';
 
     // Get the canvas element and initialize WebGL2 context
@@ -28,36 +28,27 @@
     canvas.width = canvas.clientWidth * window.devicePixelRatio;
     canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-    // Set the viewport to match the canvas size
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    // Set the clear color for the canvas (dark gray in this case) and clear the color buffer
-    gl.clearColor(0.2, 0.2, 0.2, 1.0); // Set clear color to #333
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    // Vertex shader source code
-    const vsGLSL = `#version 300 es
-    in vec4 position;
-    in vec4 color;
-    out vec4 vColor;
+    const vsGLSL = `
+    attribute vec3 position, color;
+    uniform mat4 projectionMatrix, viewMatrix, modelMatrix;
+    varying vec4 vColor;
     void main() {
-        gl_Position = position;
-        vColor = color;
-    }
-    `;
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+        vColor = vec4(color, 1.0);
+    }`;
 
-    // Fragment shader source code
-    const fsGLSL = `#version 300 es
+    const fsGLSL = `
     precision highp float;
-    in vec4 vColor;
-    out vec4 outColor;
+    varying vec4 vColor;
     void main() {
-        outColor = vColor;
-    }
-    `;
+        gl_FragColor = vColor;
+    }`;
 
     // Create and compile the vertex shader
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    if (!vertexShader) {
+        throw new Error('Failed to create vertex shader');
+    }
     gl.shaderSource(vertexShader, vsGLSL);
     gl.compileShader(vertexShader);
     if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
@@ -66,6 +57,9 @@
 
     // Create and compile the fragment shader
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    if (!fragmentShader) {
+        throw new Error('Failed to create fragment shader');
+    }
     gl.shaderSource(fragmentShader, fsGLSL);
     gl.compileShader(fragmentShader);
     if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
@@ -81,88 +75,154 @@
         throw new Error(gl.getProgramInfoLog(prg));
     }
 
-    // Get the location of the 'position' and 'color' attributes in the shader program
+    let projectionMatrix = gl.getUniformLocation(prg, "projectionMatrix");
+    let viewMatrix = gl.getUniformLocation(prg, "viewMatrix");
+    let modelMatrix = gl.getUniformLocation(prg, "modelMatrix");
+
+    // Get the location of the 'position' attribute in the shader program
     const positionLoc = gl.getAttribLocation(prg, 'position');
+    if (positionLoc === -1) {
+        throw new Error('Failed to get the attribute location for position');
+    }
+
     const colorLoc = gl.getAttribLocation(prg, 'color');
-
-    // Define the vertex positions and single color for the cube
-    const vertexData = new Float32Array([
-        // x, y, z       Color (R, G, B, A)
-        0, 0, 0,    1, 0, 0, 1, // Red color
-        1, 0, 0,    1, 0, 0, 1, // Red color
-        0, 1, 0,    1, 0, 0, 1, // Red color
-        1, 1, 0,    1, 0, 0, 1, // Red color
-        0, 0, 1,    1, 0, 0, 1, // Red color
-        1, 0, 1,    1, 0, 0, 1, // Red color
-        0, 1, 1,    1, 0, 0, 1, // Red color
-        1, 1, 1,    1, 0, 0, 1, // Red color
-    ]);
-
-    const indices = new Uint16Array([
-        0, 1, 2, 1, 3, 2,  // Front face
-        4, 5, 6, 4, 6, 7, // Back face
-        0, 4, 7, 0, 7, 3, // Left face
-        1, 5, 6, 1, 6, 2, // Right face
-        3, 2, 6, 3, 6, 7, // Top face
-        0, 1, 5, 0, 5, 4  // Bottom face
-    ]);
+    if (colorLoc === -1) {
+        throw new Error('Failed to get the attribute location for color');
+    }
 
     // Create a Vertex Array Object (VAO) to store state related to vertex input
-    const VAO = gl.createVertexArray();
-    gl.bindVertexArray(VAO);
+    const triangleVAO = gl.createVertexArray();
+    gl.bindVertexArray(triangleVAO);
+
+    // Define the vertex positions for the triangle (in clip space)
+    // Clip space is a coordinate system where x, y, and z range from -1 to 1
+    const vertexData = new Float32Array([
+        -1, -1, -1,   1, -1, -1,   1,  1, -1,  -1,  1, -1,
+        -1, -1,  1,   1, -1,  1,   1,  1,  1,  -1,  1,  1
+    ]);
 
     // Create a buffer and bind it to the ARRAY_BUFFER target
-    const VBO = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, VBO);
-    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW); // Upload vertex data to the GPU
 
     // Enable the 'position' attribute and describe its layout in the buffer
     gl.enableVertexAttribArray(positionLoc);
     gl.vertexAttribPointer(
-        positionLoc, 3, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 0
+        positionLoc,  // Attribute location
+        3,            // Number of components per vertex attribute (x and y)
+        gl.FLOAT,     // Data type of each component
+        false,        // Whether to normalize the data
+        0,            // Stride (byte offset between consecutive attributes, 0 = tightly packed)
+        0,            // Offset into the buffer where the attribute data starts
     );
 
-    // Enable the 'color' attribute and describe its layout in the buffer
+    const color = [0.27, 0.67, 0.53];
+    const colorData = new Float32Array(Array(32).fill(color).flat());
+
+    // Create a buffer and bind it to the ARRAY_BUFFER target
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colorData, gl.STATIC_DRAW); // Upload color data to the GPU
+
+    // Enable the 'position' attribute and describe its layout in the buffer
     gl.enableVertexAttribArray(colorLoc);
     gl.vertexAttribPointer(
-        colorLoc, 4, gl.FLOAT, false, 7 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT
+        colorLoc,  // Attribute location
+        3,            // Number of components per vertex attribute (x and y)
+        gl.FLOAT,     // Data type of each component
+        false,        // Whether to normalize the data
+        0,            // Stride (byte offset between consecutive attributes, 0 = tightly packed)
+        0,            // Offset into the buffer where the attribute data starts
     );
 
-    const EBO = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+    const indexData = new Uint16Array([
+        0, 1, 2,  0, 2, 3,   4, 5, 6,   4, 6, 7,
+        0, 1, 5,  0, 5, 4,   3, 2, 6,   3, 6, 7,
+        0, 3, 7,  0, 7, 4,   1, 2, 6,   1, 6, 5
+    ])
+
+    // Create a buffer abd bind indices
+    const indicesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
 
     // Use the shader program
     gl.useProgram(prg);
 
-    // Get uniform location for model-view-projection matrix
-    const mvpLoc = gl.getUniformLocation(prg, 'modelViewProjection');
+    // Building the Matrix
+    function createPerspectiveMatrix(fov, aspect, near, far) {
+        const f = 1.0 / Math.tan((fov / 2) * (Math.PI / 180));
+        const nf = 1 / (near - far);
+        return [
+            f / aspect, 0, 0, 0,
+            0, f, 0, 0,
+            0, 0, (far + near) * nf, -1,
+            0, 0, (2 * far * near) * nf, 0
+        ];
+    }
 
-    let angle = 0;
-    const render = () => {
-        angle += 0.01;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const modelViewProjection = new Float32Array([
-            cos, 0, sin, 0,
-            0, 1, 0, 0,
-            -sin, 0, cos, 0,
-            0, 0, -5, 1
-        ]);
+    const proj_matrix = createPerspectiveMatrix(75, canvas.width/canvas.height, 0,1, 5);
+    const mov_matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -2, 1];
+    const view_matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -2, 1];
 
-        // Pass rotation matrix to shader
-        gl.uniformMatrix4fv(mvpLoc, false, modelViewProjection);
+    function rotateX(m, angle) {
+        let c = Math.cos(angle);
+        let s = Math.sin(angle);
+        let mv1 = m[1], mv5 = m[5], mv9 = m[9];
 
-        // Clear and draw the cube
+        m[1] = m[1]*c-m[2]*s;
+        m[5] = m[5]*c-m[6]*s;
+        m[9] = m[9]*c-m[10]*s;
+
+        m[2] = m[2]*c+mv1*s;
+        m[6] = m[6]*c+mv5*s;
+        m[10] = m[10]*c+mv9*s;
+    }
+
+    function rotateY(m, angle) {
+        let c = Math.cos(angle);
+        let s = Math.sin(angle);
+        let mv0 = m[0], mv4 = m[4], mv8 = m[8];
+
+        m[0] = c*m[0]+s*m[2];
+        m[4] = c*m[4]+s*m[6];
+        m[8] = c*m[8]+s*m[10];
+
+        m[2] = c*m[2]-s*mv0;
+        m[6] = c*m[6]-s*mv4;
+        m[10] = c*m[10]-s*mv8;
+    }
+
+    let time_prev = 0;
+    const animate = (time) => {
+
+        let dt = time - time_prev;
+        rotateY(mov_matrix, dt*0.001);
+        rotateX(mov_matrix, dt*0.001);
+        time_prev = time;
+
+        // Set the viewport to match the canvas size
+        gl.viewport(0, 0, canvas.width, canvas.height);
+
+        // Set the clear color for the canvas (dark gray in this case) and clear the color buffer
+        gl.clearColor(0.2, 0.2, 0.2, 1.0); // Set clear color to #333
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
         gl.enable(gl.DEPTH_TEST);
-        gl.bindVertexArray(VAO);
-        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clearDepth(1.0);
 
-        requestAnimationFrame(render);
-    };
+        gl.uniformMatrix4fv(projectionMatrix, false, proj_matrix);
+        gl.uniformMatrix4fv(viewMatrix, false, view_matrix);
+        gl.uniformMatrix4fv(modelMatrix, false, mov_matrix);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
 
-    requestAnimationFrame(render);
-    </script>
+        window.requestAnimationFrame(animate);
+    }
+
+    animate(0);
+</script>
 </body>
 </html>
