@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>A-Frame AR.js Marker Tester</title>
+    <meta charset="utf-8" />
+    <!-- A-Frame: Core 3D/VR/AR Framework -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <!-- AR.js: Adds AR Capabilities -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://threejs.org/build/three.min.js"></script>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- Scene Configuration -->
+    <a-scene
+        embedded
+        vr-mode-ui="enabled:false"
+        arjs="sourceType: webcam;
+        detectionMode: mono_and_matrix;
+        matrixCodeType: 3x3_PARITY65">
+
+        <a-entity line-drawer="marker0: #marker0; marker1: #marker1"></a-entity>
+        
+        <!-- Marker 0: Red -->
+        <a-marker type="barcode" value="0" id="marker0" marker-visibility-handler>
+            <a-box position="0 0.5 0" color="red" opacity="0.5"></a-box>
+        </a-marker>
+        
+        <!-- Marker 1: Green -->
+        <a-marker type="barcode" value="1" id="marker1" marker-visibility-handler>
+            <a-box position="0 0.5 0" color="green" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 2: Blue -->
+        <a-marker type="barcode" value="2">
+            <a-box position="0 0.5 0" color="blue" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 3: Magenta -->
+        <a-marker type="barcode" value="3">
+            <a-box position="0 0.5 0" color="magenta" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 4: Cyan -->
+        <a-marker type="barcode" value="4">
+            <a-box position="0 0.5 0" color="cyan" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 5: Yellow -->
+        <a-marker type="barcode" value="5">
+            <a-box position="0 0.5 0" color="yellow" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 6: White -->
+        <a-marker type="barcode" value="6">
+            <a-box position="0 0.5 0" color="white" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 7: Grey -->
+        <a-marker type="barcode" value="7">
+            <a-box position="0 0.5 0" color="grey" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Marker 8: Black -->
+        <a-marker type="barcode" value="8">
+            <a-box position="0 0.5 0" color="black" opacity="0.5"></a-box>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+    </a-scene>
+</body>
+</html>
