@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script>
+        // Global state for marker visibility
+        const marker_visible = {
+            'human': false,
+            'orc': false
+        };
+
+        // First component: Marker event handling
+        AFRAME.registerComponent("marker-events", {
+            init: function() {
+                let el = this.el;
+                // Your task: Add event listeners for targetFound and targetLost
+                // Each should update marker_visible state and log to console
+                // Hint: el.addEventListener("targetFound", function() { ... });
+            }
+        });
+
+        // Second component: Spear animation
+        AFRAME.registerComponent("animate-spear", {
+            init: function() {
+                // Your task: Initialize necessary references and variables
+                // 1. Get marker references using querySelector
+                // 2. Get spear reference
+                // 3. Create THREE.Vector3 objects for positions
+                // 4. Add animation state tracking
+            },
+            tick: function() {
+                // Your task: Implement the animation logic
+                // 1. Check if both markers are visible
+                // 2. If yes and animation not set:
+                // - Get world positions
+                // - Calculate relative position
+                // - Set up animation
+                // 3. If either marker lost:
+                // - Hide spear
+                // - Reset animation state
+            }
+        });
+    </script>
+</head>
+<body>
+    <a-scene
+        mindar-image="imageTargetSrc: Assets/human-orc-targets.mind; maxTrack: 2"
+        color-space="sRGB"
+        renderer="colorManagement: true, physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+        <a-assets>
+            <img id="card-human" src="Assets/card-human.png" />
+            <img id="card-orc" src="Assets/card-orc.png" />
+            <a-asset-item id="model-human" src="Assets/character-human.glb"></a-asset-item>
+            <a-asset-item id="model-orc" src="Assets/character-orc.glb"></a-asset-item>
+            <a-asset-item id="model-spear" src="Assets/weapon-spear.glb"></a-asset-item>
+        </a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity id="human" mindar-image-target="targetIndex: 0" marker-events>
+            <a-plane src="#card-human" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-plane>
+            <a-gltf-model src="#model-human" scale="1 1 1" position="0 0 0" rotation="90 0 0"></a-gltf-model>
+        </a-entity>
+        <a-entity id="orc" mindar-image-target="targetIndex: 1" marker-events>
+            <a-plane src="#card-orc" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-plane>
+            <a-gltf-model src="#model-orc" scale="1 1 1" position="0 0 0" rotation="90 0 0"></a-gltf-model>
+            <a-gltf-model id="spear" src="#model-spear" scale="1 1 1" position="-0.33 -0.03 0" rotation="90 0 0"></a-gltf-model>
+        </a-entity>
+        <a-entity animate-spear></a-entity>
+    </a-scene>
+</body>
+</html>
